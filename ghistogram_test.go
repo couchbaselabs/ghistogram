@@ -67,6 +67,8 @@ func TestNewHistogram(t *testing.T) {
 
 		{5, 10, 2.0, []int{0, 10, 20, 40, 80}},
 		{5, 10, 1.5, []int{0, 10, 15, 23, 35}},
+
+		{5, 10, 0.0, []int{0, 10, 20, 30, 40}},
 	}
 
 	for testi, test := range tests {

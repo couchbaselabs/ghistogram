@@ -25,6 +25,9 @@ import (
 // where len(Ranges) == len(Counts).  These arrays are public in case
 // users wish to use reflection or JSON marhsallings.
 //
+// An optional growth factor for bin sizes is supported - see
+// NewHistogram() binGrowthFactor parameter.
+//
 // Concurrent access (e.g., locking) on a Histogram is a
 // responsibility of the user's application.
 type Histogram struct {
@@ -34,7 +37,10 @@ type Histogram struct {
 
 // NewHistogram creates a new, ready to use Histogram.  The numBins
 // must be >= 2.  The binFirst is the width of the first bin.  The
-// binGrowthFactor must be > 1.0.
+// binGrowthFactor must be > 1.0 or 0.0.
+//
+// A special case of binGrowthFactor of 0.0 means the the allocated
+// bins will have constant, non-growing size or "width".
 func NewHistogram(
 	numBins int,
 	binFirst int,
@@ -48,8 +54,12 @@ func NewHistogram(
 	gh.Ranges[1] = binFirst
 
 	for i := 2; i < len(gh.Ranges); i++ {
-		gh.Ranges[i] =
-			int(math.Ceil(binGrowthFactor * float64(gh.Ranges[i-1])))
+		if binGrowthFactor == 0.0 {
+			gh.Ranges[i] = gh.Ranges[i-1] + binFirst
+		} else {
+			gh.Ranges[i] =
+				int(math.Ceil(binGrowthFactor * float64(gh.Ranges[i-1])))
+		}
 	}
 
 	return gh
