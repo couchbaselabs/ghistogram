@@ -22,11 +22,11 @@ import (
 // histogram implementations, ghistogram avoids heap allocations
 // (garbage creation) during data processing.
 type GHistogram struct {
-	// Bins are split across ranges and counts, where len(ranges) ==
-	// len(counts).
+	// Bins are split across Ranges and Counts, where len(Ranges) ==
+	// len(Counts).
 
-	ranges []int // Lower bound of bin, so ranges[0] == binStart.
-	counts []uint64
+	Ranges []int // Lower bound of bin, so Ranges[0] == binStart.
+	Counts []uint64
 }
 
 // NewGHistogram creates a new GHistogram.  The numBins must be >= 2.
@@ -37,16 +37,16 @@ func NewGHistogram(
 	binFirst int,
 	binGrowthFactor float64) *GHistogram {
 	gh := &GHistogram{
-		ranges: make([]int, numBins),
-		counts: make([]uint64, numBins),
+		Ranges: make([]int, numBins),
+		Counts: make([]uint64, numBins),
 	}
 
-	gh.ranges[0] = 0
-	gh.ranges[1] = binFirst
+	gh.Ranges[0] = 0
+	gh.Ranges[1] = binFirst
 
-	for i := 2; i < len(gh.ranges); i++ {
-		gh.ranges[i] =
-			int(math.Ceil(binGrowthFactor * float64(gh.ranges[i-1])))
+	for i := 2; i < len(gh.Ranges); i++ {
+		gh.Ranges[i] =
+			int(math.Ceil(binGrowthFactor * float64(gh.Ranges[i-1])))
 	}
 
 	return gh
@@ -54,9 +54,9 @@ func NewGHistogram(
 
 // Add increases the count in the bin for the given dataPoint.
 func (gh *GHistogram) Add(dataPoint int, count uint64) {
-	idx := search(gh.ranges, dataPoint)
+	idx := search(gh.Ranges, dataPoint)
 	if idx >= 0 {
-		gh.counts[idx] += count
+		gh.Counts[idx] += count
 	}
 }
 
@@ -74,4 +74,13 @@ func search(arr []int, dataPoint int) int {
 	}
 
 	return i - 1
+}
+
+// AddAll adds all the Counts from the src histogram into this
+// histogram.  The src and this histogram must either have the same
+// exact creation parameters.
+func (gh *GHistogram) AddAll(src *GHistogram) {
+	for i := 0; i < len(src.Counts); i++ {
+		gh.Counts[i] += src.Counts[i]
+	}
 }

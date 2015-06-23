@@ -72,28 +72,27 @@ func TestNewGHistogram(t *testing.T) {
 	for testi, test := range tests {
 		gh := NewGHistogram(
 			test.numBins, test.binFirst, test.binGrowthFactor)
-		if len(gh.ranges) != len(gh.counts) {
+		if len(gh.Ranges) != len(gh.Counts) {
 			t.Errorf("mismatched len's")
 		}
-		if len(gh.ranges) != test.numBins {
+		if len(gh.Ranges) != test.numBins {
 			t.Errorf("wrong len's")
 		}
-		if len(gh.ranges) != len(test.exp) {
+		if len(gh.Ranges) != len(test.exp) {
 			t.Errorf("unequal len's")
 		}
-		for i := 0; i < len(gh.ranges); i++ {
-			if gh.ranges[i] != test.exp[i] {
+		for i := 0; i < len(gh.Ranges); i++ {
+			if gh.Ranges[i] != test.exp[i] {
 				t.Errorf("test #%d, actual (%v) != exp (%v)",
-					testi, gh.ranges, test.exp)
+					testi, gh.Ranges, test.exp)
 			}
 		}
 	}
 }
 
 func TestAdd(t *testing.T) {
-	gh := NewGHistogram(5, 10, 2.0)
-
 	// Bins will look like: {0, 10, 20, 40, 80}.
+	gh := NewGHistogram(5, 10, 2.0)
 
 	tests := []struct {
 		val int
@@ -123,11 +122,33 @@ func TestAdd(t *testing.T) {
 	for testi, test := range tests {
 		gh.Add(test.val, 1)
 
-		for i := 0; i < len(gh.counts); i++ {
-			if gh.counts[i] != test.exp[i] {
+		for i := 0; i < len(gh.Counts); i++ {
+			if gh.Counts[i] != test.exp[i] {
 				t.Errorf("test #%d, actual (%v) != exp (%v)",
-					testi, gh.counts, test.exp)
+					testi, gh.Counts, test.exp)
 			}
+		}
+	}
+}
+
+func TestAddAll(t *testing.T) {
+	// Bins will look like: {0, 10, 20, 40, 80}.
+	gh := NewGHistogram(5, 10, 2.0)
+
+	gh.Add(15, 2)
+	gh.Add(25, 3)
+	gh.Add(1000, 1)
+
+	gh2 := NewGHistogram(5, 10, 2.0)
+	gh2.AddAll(gh)
+	gh2.AddAll(gh)
+
+	exp := []uint64{0, 4, 6, 0, 2}
+
+	for i := 0; i < len(gh2.Counts); i++ {
+		if gh2.Counts[i] != exp[i] {
+			t.Errorf("AddAll mismatch, actual (%v) != exp (%v)",
+				gh2.Counts, exp)
 		}
 	}
 }
