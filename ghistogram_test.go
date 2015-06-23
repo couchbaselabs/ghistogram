@@ -55,12 +55,12 @@ func TestSearch(t *testing.T) {
 	}
 }
 
-func TestNewGHistogram(t *testing.T) {
+func TestNewHistogram(t *testing.T) {
 	tests := []struct {
-		numBins int
-		binFirst int
+		numBins         int
+		binFirst        int
 		binGrowthFactor float64
-		exp []int
+		exp             []int
 	}{
 		{2, 123, 10.0, []int{0, 123}},
 		{2, 123, 10.0, []int{0, 123}},
@@ -70,7 +70,7 @@ func TestNewGHistogram(t *testing.T) {
 	}
 
 	for testi, test := range tests {
-		gh := NewGHistogram(
+		gh := NewHistogram(
 			test.numBins, test.binFirst, test.binGrowthFactor)
 		if len(gh.Ranges) != len(gh.Counts) {
 			t.Errorf("mismatched len's")
@@ -92,7 +92,7 @@ func TestNewGHistogram(t *testing.T) {
 
 func TestAdd(t *testing.T) {
 	// Bins will look like: {0, 10, 20, 40, 80}.
-	gh := NewGHistogram(5, 10, 2.0)
+	gh := NewHistogram(5, 10, 2.0)
 
 	tests := []struct {
 		val int
@@ -133,13 +133,13 @@ func TestAdd(t *testing.T) {
 
 func TestAddAll(t *testing.T) {
 	// Bins will look like: {0, 10, 20, 40, 80}.
-	gh := NewGHistogram(5, 10, 2.0)
+	gh := NewHistogram(5, 10, 2.0)
 
 	gh.Add(15, 2)
 	gh.Add(25, 3)
 	gh.Add(1000, 1)
 
-	gh2 := NewGHistogram(5, 10, 2.0)
+	gh2 := NewHistogram(5, 10, 2.0)
 	gh2.AddAll(gh)
 	gh2.AddAll(gh)
 

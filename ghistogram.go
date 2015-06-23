@@ -9,34 +9,37 @@
 //  express or implied. See the License for the specific language
 //  governing permissions and limitations under the License.
 
-// Package ghistogram provides a simple histogram of ints.  Unlike
-// other histogram implementations, ghistogram avoids heap allocations
-// (garbage creation) during data processing.
+// Package ghistogram provides a simple histogram of ints that avoids
+// heap allocations (garbage creation) during data processing.
 package ghistogram
 
 import (
 	"math"
 )
 
-// GHistogram is a simple int histogram implementation.  Unlike other
-// histogram implementations, ghistogram avoids heap allocations
-// (garbage creation) during data processing.
-type GHistogram struct {
-	// Bins are split across Ranges and Counts, where len(Ranges) ==
-	// len(Counts).
-
+// Histogram is a simple int histogram implementation that avoids heap
+// allocations (garbage creation) during its processing of incoming
+// data points.
+//
+// The histogram bins are split across arrays of Ranges and Counts,
+// where len(Ranges) == len(Counts).  These arrays are public in case
+// users wish to use reflection or JSON marhsallings.
+//
+// Concurrent access (e.g., locking) on a Histogram is a
+// responsibility of the user's application.
+type Histogram struct {
 	Ranges []int // Lower bound of bin, so Ranges[0] == binStart.
 	Counts []uint64
 }
 
-// NewGHistogram creates a new GHistogram.  The numBins must be >= 2.
-// The binFirst is the width of the first bin.  The binGrowthFactor
-// must be > 1.0.
-func NewGHistogram(
+// NewHistogram creates a new, ready to use Histogram.  The numBins
+// must be >= 2.  The binFirst is the width of the first bin.  The
+// binGrowthFactor must be > 1.0.
+func NewHistogram(
 	numBins int,
 	binFirst int,
-	binGrowthFactor float64) *GHistogram {
-	gh := &GHistogram{
+	binGrowthFactor float64) *Histogram {
+	gh := &Histogram{
 		Ranges: make([]int, numBins),
 		Counts: make([]uint64, numBins),
 	}
@@ -53,7 +56,7 @@ func NewGHistogram(
 }
 
 // Add increases the count in the bin for the given dataPoint.
-func (gh *GHistogram) Add(dataPoint int, count uint64) {
+func (gh *Histogram) Add(dataPoint int, count uint64) {
 	idx := search(gh.Ranges, dataPoint)
 	if idx >= 0 {
 		gh.Counts[idx] += count
@@ -79,7 +82,7 @@ func search(arr []int, dataPoint int) int {
 // AddAll adds all the Counts from the src histogram into this
 // histogram.  The src and this histogram must either have the same
 // exact creation parameters.
-func (gh *GHistogram) AddAll(src *GHistogram) {
+func (gh *Histogram) AddAll(src *Histogram) {
 	for i := 0; i < len(src.Counts); i++ {
 		gh.Counts[i] += src.Counts[i]
 	}
