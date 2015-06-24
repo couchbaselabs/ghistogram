@@ -157,3 +157,30 @@ func TestAddAll(t *testing.T) {
 		}
 	}
 }
+
+func TestGraph(t *testing.T) {
+	// Bins will look like: {0, 10, 20, 40, 80, 160, 320}.
+	gh := NewHistogram(7, 10, 2.0)
+
+	gh.Add(10, 20)
+	gh.Add(20, 10)
+	gh.Add(40, 3)
+	gh.Add(160, 2)
+	gh.Add(320, 1)
+
+	buf := gh.EmitGraph([]byte("- "), nil)
+
+	exp := `-   0+ 10= 0   0.00%
+-  10+ 10=20  55.56% ******************************
+-  20+ 20=10  83.33% ***************
+-  40+ 40= 3  91.67% ****
+-  80+ 80= 0  91.67%
+- 160+160= 2  97.22% ***
+- 320+  0= 1 100.00% *
+`
+	got := buf.String()
+	if got != exp {
+		t.Errorf("didn't get expected graph,\ngot: %s\nexp: %s",
+			got, exp)
+	}
+}

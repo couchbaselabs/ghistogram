@@ -14,7 +14,10 @@
 package ghistogram
 
 import (
+	"bytes"
+	"fmt"
 	"math"
+	"strconv"
 )
 
 // Histogram is a simple int histogram implementation that avoids heap
@@ -97,3 +100,73 @@ func (gh *Histogram) AddAll(src *Histogram) {
 		gh.Counts[i] += src.Counts[i]
 	}
 }
+
+// Graph emits an ascii graph to the optional bufOut, allocating a
+// bufOut if none is supplied.  Returns the bufOut.  Each line emitted
+// will have the given, optional prefix.
+//
+// For example:
+//       0+  10=2 10.00% ********
+//      10+  10=1 10.00% ****
+//      20+  10=3 10.00% ************
+func (gh *Histogram) EmitGraph(prefix []byte,
+	bufOut *bytes.Buffer) *bytes.Buffer {
+	ranges := gh.Ranges
+	rangesN := len(ranges)
+	counts := gh.Counts
+	countsN := len(counts)
+
+	if bufOut == nil {
+		bufOut = bytes.NewBuffer(make([]byte, 0, 80*countsN))
+	}
+
+	var totCount uint64
+	var maxCount uint64
+	for _, c := range counts {
+		totCount += c
+		if maxCount < c {
+			maxCount = c
+		}
+	}
+	totCountF := float64(totCount)
+	maxCountF := float64(maxCount)
+
+	widthRange := len(strconv.Itoa(ranges[rangesN-1]))
+	widthWidth := len(strconv.Itoa(ranges[rangesN-1] - ranges[rangesN-2]))
+	widthCount := len(strconv.Itoa(int(maxCount)))
+
+	// Each line looks like: "[prefix]START+WIDTH=COUNT PCT% BAR\n"
+	f := fmt.Sprintf("%%%dd+%%%dd=%%%dd%% 7.2f%%%%",
+		widthRange, widthWidth, widthCount)
+
+	var runCount uint64 // Running total while emitting lines.
+
+	barLen := float64(len(bar))
+
+	for i, c := range counts {
+		if prefix != nil {
+			bufOut.Write(prefix)
+		}
+
+		var width uint64
+		if i < countsN-1 {
+			width = uint64(ranges[i+1] - ranges[i])
+		}
+
+		runCount += c
+		fmt.Fprintf(bufOut, f, ranges[i], width, c,
+			100.0*(float64(runCount)/totCountF))
+
+		if c > 0 {
+			bufOut.Write([]byte(" "))
+			barWant := int(math.Floor(barLen * (float64(c) / maxCountF)))
+			bufOut.Write(bar[0:barWant])
+		}
+
+		bufOut.Write([]byte("\n"))
+	}
+
+	return bufOut
+}
+
+var bar = []byte("******************************")
