@@ -34,7 +34,12 @@ import (
 // Concurrent access (e.g., locking) on a Histogram is a
 // responsibility of the user's application.
 type Histogram struct {
-	Ranges []uint64 // Lower bound of bin, so Ranges[0] == binStart.
+	// Ranges holds the lower domain bounds of bins, so bin i has data
+	// point domain of "[Ranges[i], Ranges[i+1])".  Related,
+	// Ranges[0] == 0 and Ranges[1] == binFirst.
+	Ranges []uint64
+
+	// Counts holds the event counts for bins.
 	Counts []uint64
 
 	MinDataPoint uint64
