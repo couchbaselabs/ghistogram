@@ -34,8 +34,11 @@ import (
 // Concurrent access (e.g., locking) on a Histogram is a
 // responsibility of the user's application.
 type Histogram struct {
-	Ranges []int // Lower bound of bin, so Ranges[0] == binStart.
+	Ranges []uint64 // Lower bound of bin, so Ranges[0] == binStart.
 	Counts []uint64
+
+	MinDataPoint uint64
+	MaxDataPoint uint64
 }
 
 // NewHistogram creates a new, ready to use Histogram.  The numBins
@@ -46,11 +49,14 @@ type Histogram struct {
 // bins will have constant, non-growing size or "width".
 func NewHistogram(
 	numBins int,
-	binFirst int,
+	binFirst uint64,
 	binGrowthFactor float64) *Histogram {
 	gh := &Histogram{
-		Ranges: make([]int, numBins),
+		Ranges: make([]uint64, numBins),
 		Counts: make([]uint64, numBins),
+
+		MinDataPoint: math.MaxUint64,
+		MaxDataPoint: 0,
 	}
 
 	gh.Ranges[0] = 0
@@ -61,7 +67,7 @@ func NewHistogram(
 			gh.Ranges[i] = gh.Ranges[i-1] + binFirst
 		} else {
 			gh.Ranges[i] =
-				int(math.Ceil(binGrowthFactor * float64(gh.Ranges[i-1])))
+				uint64(math.Ceil(binGrowthFactor * float64(gh.Ranges[i-1])))
 		}
 	}
 
@@ -69,15 +75,21 @@ func NewHistogram(
 }
 
 // Add increases the count in the bin for the given dataPoint.
-func (gh *Histogram) Add(dataPoint int, count uint64) {
+func (gh *Histogram) Add(dataPoint uint64, count uint64) {
 	idx := search(gh.Ranges, dataPoint)
 	if idx >= 0 {
 		gh.Counts[idx] += count
 	}
+	if gh.MinDataPoint > count {
+		gh.MinDataPoint = count
+	}
+	if gh.MaxDataPoint < count {
+		gh.MaxDataPoint = count
+	}
 }
 
 // Finds the last arr index where the arr entry <= dataPoint.
-func search(arr []int, dataPoint int) int {
+func search(arr []uint64, dataPoint uint64) int {
 	i, j := 0, len(arr)
 
 	for i < j {
@@ -98,6 +110,12 @@ func search(arr []int, dataPoint int) int {
 func (gh *Histogram) AddAll(src *Histogram) {
 	for i := 0; i < len(src.Counts); i++ {
 		gh.Counts[i] += src.Counts[i]
+	}
+	if gh.MinDataPoint > src.MinDataPoint {
+		gh.MinDataPoint = src.MinDataPoint
+	}
+	if gh.MaxDataPoint < src.MaxDataPoint {
+		gh.MaxDataPoint = src.MaxDataPoint
 	}
 }
 
@@ -131,8 +149,8 @@ func (gh *Histogram) EmitGraph(prefix []byte,
 	totCountF := float64(totCount)
 	maxCountF := float64(maxCount)
 
-	widthRange := len(strconv.Itoa(ranges[rangesN-1]))
-	widthWidth := len(strconv.Itoa(ranges[rangesN-1] - ranges[rangesN-2]))
+	widthRange := len(strconv.Itoa(int(ranges[rangesN-1])))
+	widthWidth := len(strconv.Itoa(int(ranges[rangesN-1] - ranges[rangesN-2])))
 	widthCount := len(strconv.Itoa(int(maxCount)))
 
 	// Each line looks like: "[prefix]START+WIDTH=COUNT PCT% BAR\n"

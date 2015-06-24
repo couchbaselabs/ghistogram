@@ -6,37 +6,36 @@ import (
 
 func TestSearch(t *testing.T) {
 	tests := []struct {
-		arr []int
-		val int
+		arr []uint64
+		val uint64
 		exp int
 	}{
-		{[]int(nil), 0, -1},
-		{[]int(nil), 100, -1},
-		{[]int(nil), -100, -1},
+		{[]uint64(nil), 0, -1},
+		{[]uint64(nil), 100, -1},
 
-		{[]int{0}, 0, 0},
-		{[]int{0, 10}, 0, 0},
-		{[]int{0, 10, 20}, 0, 0},
+		{[]uint64{0}, 0, 0},
+		{[]uint64{0, 10}, 0, 0},
+		{[]uint64{0, 10, 20}, 0, 0},
 
-		{[]int{0}, 1, 0},
-		{[]int{0, 10}, 1, 0},
-		{[]int{0, 10, 20}, 1, 0},
+		{[]uint64{0}, 1, 0},
+		{[]uint64{0, 10}, 1, 0},
+		{[]uint64{0, 10, 20}, 1, 0},
 
-		{[]int{0}, 10, 0},
-		{[]int{0, 10}, 10, 1},
-		{[]int{0, 10, 20}, 10, 1},
+		{[]uint64{0}, 10, 0},
+		{[]uint64{0, 10}, 10, 1},
+		{[]uint64{0, 10, 20}, 10, 1},
 
-		{[]int{0}, 15, 0},
-		{[]int{0, 10}, 15, 1},
-		{[]int{0, 10, 20}, 15, 1},
+		{[]uint64{0}, 15, 0},
+		{[]uint64{0, 10}, 15, 1},
+		{[]uint64{0, 10, 20}, 15, 1},
 
-		{[]int{0}, 20, 0},
-		{[]int{0, 10}, 20, 1},
-		{[]int{0, 10, 20}, 20, 2},
+		{[]uint64{0}, 20, 0},
+		{[]uint64{0, 10}, 20, 1},
+		{[]uint64{0, 10, 20}, 20, 2},
 
-		{[]int{0}, 30, 0},
-		{[]int{0, 10}, 30, 1},
-		{[]int{0, 10, 20}, 30, 2},
+		{[]uint64{0}, 30, 0},
+		{[]uint64{0, 10}, 30, 1},
+		{[]uint64{0, 10, 20}, 30, 2},
 	}
 
 	for testi, test := range tests {
@@ -58,20 +57,20 @@ func TestSearch(t *testing.T) {
 func TestNewHistogram(t *testing.T) {
 	tests := []struct {
 		numBins         int
-		binFirst        int
+		binFirst        uint64
 		binGrowthFactor float64
-		exp             []int
+		exp             []uint64
 	}{
-		{2, 123, 10.0, []int{0, 123}},
-		{2, 123, 10.0, []int{0, 123}},
+		{2, 123, 10.0, []uint64{0, 123}},
+		{2, 123, 10.0, []uint64{0, 123}},
 
 		// Test constant bin sizes.
-		{5, 10, 0.0, []int{0, 10, 20, 30, 40}},
+		{5, 10, 0.0, []uint64{0, 10, 20, 30, 40}},
 
 		// Test growing bin sizes.
-		{5, 10, 1.5, []int{0, 10, 15, 23, 35}},
-		{5, 10, 2.0, []int{0, 10, 20, 40, 80}},
-		{5, 10, 10.0, []int{0, 10, 100, 1000, 10000}},
+		{5, 10, 1.5, []uint64{0, 10, 15, 23, 35}},
+		{5, 10, 2.0, []uint64{0, 10, 20, 40, 80}},
+		{5, 10, 10.0, []uint64{0, 10, 100, 1000, 10000}},
 	}
 
 	for testi, test := range tests {
@@ -100,7 +99,7 @@ func TestAdd(t *testing.T) {
 	gh := NewHistogram(5, 10, 2.0)
 
 	tests := []struct {
-		val int
+		val uint64
 		exp []uint64
 	}{
 		{0, []uint64{1, 0, 0, 0, 0}},
