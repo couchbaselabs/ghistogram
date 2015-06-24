@@ -9,8 +9,8 @@
 //  express or implied. See the License for the specific language
 //  governing permissions and limitations under the License.
 
-// Package ghistogram provides a simple histogram of ints that avoids
-// heap allocations (garbage creation) during data processing.
+// Package ghistogram provides a simple histogram of uint64's that
+// avoids heap allocations (garbage creation) during data processing.
 package ghistogram
 
 import (
@@ -20,19 +20,20 @@ import (
 	"strconv"
 )
 
-// Histogram is a simple int histogram implementation that avoids heap
-// allocations (garbage creation) during its processing of incoming
-// data points.
+// Histogram is a simple uint64 histogram implementation that avoids
+// heap allocations during its processing of incoming data points.
 //
-// The histogram bins are split across arrays of Ranges and Counts,
-// where len(Ranges) == len(Counts).  These arrays are public in case
-// users wish to use reflection or JSON marhsallings.
+// It was motivated for tracking simple performance timings.
+//
+// The histogram bins are split across the two arrays of Ranges and
+// Counts, where len(Ranges) == len(Counts).  These arrays are public
+// in case users wish to use reflection or JSON marhsaling.
 //
 // An optional growth factor for bin sizes is supported - see
 // NewHistogram() binGrowthFactor parameter.
 //
-// Concurrent access (e.g., locking) on a Histogram is a
-// responsibility of the user's application.
+// Concurrent usage of a Histogram is the responsibility of the user
+// (e.g., use your own locking).
 type Histogram struct {
 	// Ranges holds the lower domain bounds of bins, so bin i has data
 	// point domain of "[Ranges[i], Ranges[i+1])".  Related,
