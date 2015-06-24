@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"sync"
 )
 
 // Histogram is a simple uint64 histogram implementation that avoids
@@ -32,8 +33,7 @@ import (
 // An optional growth factor for bin sizes is supported - see
 // NewHistogram() binGrowthFactor parameter.
 //
-// Concurrent usage of a Histogram is the responsibility of the user
-// (e.g., use your own locking).
+// The histogram is concurrent safe.
 type Histogram struct {
 	// Ranges holds the lower domain bounds of bins, so bin i has data
 	// point domain of "[Ranges[i], Ranges[i+1])".  Related,
@@ -45,6 +45,8 @@ type Histogram struct {
 
 	MinDataPoint uint64
 	MaxDataPoint uint64
+
+	m sync.Mutex
 }
 
 // NewHistogram creates a new, ready to use Histogram.  The numBins
@@ -82,6 +84,8 @@ func NewHistogram(
 
 // Add increases the count in the bin for the given dataPoint.
 func (gh *Histogram) Add(dataPoint uint64, count uint64) {
+	gh.m.Lock()
+
 	idx := search(gh.Ranges, dataPoint)
 	if idx >= 0 {
 		gh.Counts[idx] += count
@@ -92,6 +96,8 @@ func (gh *Histogram) Add(dataPoint uint64, count uint64) {
 	if gh.MaxDataPoint < count {
 		gh.MaxDataPoint = count
 	}
+
+	gh.m.Unlock()
 }
 
 // Finds the last arr index where the arr entry <= dataPoint.
@@ -114,6 +120,8 @@ func search(arr []uint64, dataPoint uint64) int {
 // histogram.  The src and this histogram must either have the same
 // exact creation parameters.
 func (gh *Histogram) AddAll(src *Histogram) {
+	gh.m.Lock()
+
 	for i := 0; i < len(src.Counts); i++ {
 		gh.Counts[i] += src.Counts[i]
 	}
@@ -123,6 +131,8 @@ func (gh *Histogram) AddAll(src *Histogram) {
 	if gh.MaxDataPoint < src.MaxDataPoint {
 		gh.MaxDataPoint = src.MaxDataPoint
 	}
+
+	gh.m.Unlock()
 }
 
 // Graph emits an ascii graph to the optional out buffer, allocating a
@@ -135,6 +145,8 @@ func (gh *Histogram) AddAll(src *Histogram) {
 //      20+  10=3 10.00% ************
 func (gh *Histogram) EmitGraph(prefix []byte,
 	out *bytes.Buffer) *bytes.Buffer {
+	gh.m.Lock()
+
 	ranges := gh.Ranges
 	rangesN := len(ranges)
 	counts := gh.Counts
@@ -189,6 +201,8 @@ func (gh *Histogram) EmitGraph(prefix []byte,
 
 		out.Write([]byte("\n"))
 	}
+
+	gh.m.Unlock()
 
 	return out
 }
