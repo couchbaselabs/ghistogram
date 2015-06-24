@@ -125,23 +125,23 @@ func (gh *Histogram) AddAll(src *Histogram) {
 	}
 }
 
-// Graph emits an ascii graph to the optional bufOut, allocating a
-// bufOut if none is supplied.  Returns the bufOut.  Each line emitted
-// will have the given, optional prefix.
+// Graph emits an ascii graph to the optional out buffer, allocating a
+// out buffer if none was supplied.  Returns the out buffer.  Each
+// line emitted may have an optional prefix.
 //
 // For example:
 //       0+  10=2 10.00% ********
 //      10+  10=1 10.00% ****
 //      20+  10=3 10.00% ************
 func (gh *Histogram) EmitGraph(prefix []byte,
-	bufOut *bytes.Buffer) *bytes.Buffer {
+	out *bytes.Buffer) *bytes.Buffer {
 	ranges := gh.Ranges
 	rangesN := len(ranges)
 	counts := gh.Counts
 	countsN := len(counts)
 
-	if bufOut == nil {
-		bufOut = bytes.NewBuffer(make([]byte, 0, 80*countsN))
+	if out == nil {
+		out = bytes.NewBuffer(make([]byte, 0, 80*countsN))
 	}
 
 	var totCount uint64
@@ -169,7 +169,7 @@ func (gh *Histogram) EmitGraph(prefix []byte,
 
 	for i, c := range counts {
 		if prefix != nil {
-			bufOut.Write(prefix)
+			out.Write(prefix)
 		}
 
 		var width uint64
@@ -178,19 +178,19 @@ func (gh *Histogram) EmitGraph(prefix []byte,
 		}
 
 		runCount += c
-		fmt.Fprintf(bufOut, f, ranges[i], width, c,
+		fmt.Fprintf(out, f, ranges[i], width, c,
 			100.0*(float64(runCount)/totCountF))
 
 		if c > 0 {
-			bufOut.Write([]byte(" "))
+			out.Write([]byte(" "))
 			barWant := int(math.Floor(barLen * (float64(c) / maxCountF)))
-			bufOut.Write(bar[0:barWant])
+			out.Write(bar[0:barWant])
 		}
 
-		bufOut.Write([]byte("\n"))
+		out.Write([]byte("\n"))
 	}
 
-	return bufOut
+	return out
 }
 
 var bar = []byte("******************************")
