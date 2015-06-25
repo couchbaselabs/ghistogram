@@ -120,6 +120,7 @@ func search(arr []uint64, dataPoint uint64) int {
 // histogram.  The src and this histogram must either have the same
 // exact creation parameters.
 func (gh *Histogram) AddAll(src *Histogram) {
+	src.m.Lock()
 	gh.m.Lock()
 
 	for i := 0; i < len(src.Counts); i++ {
@@ -133,6 +134,7 @@ func (gh *Histogram) AddAll(src *Histogram) {
 	}
 
 	gh.m.Unlock()
+	src.m.Unlock()
 }
 
 // Graph emits an ascii graph to the optional out buffer, allocating a
