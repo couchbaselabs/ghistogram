@@ -43,6 +43,7 @@ type Histogram struct {
 	// Counts holds the event counts for bins.
 	Counts []uint64
 
+	TotCount     uint64
 	MinDataPoint uint64
 	MaxDataPoint uint64
 
@@ -60,9 +61,9 @@ func NewHistogram(
 	binFirst uint64,
 	binGrowthFactor float64) *Histogram {
 	gh := &Histogram{
-		Ranges: make([]uint64, numBins),
-		Counts: make([]uint64, numBins),
-
+		Ranges:       make([]uint64, numBins),
+		Counts:       make([]uint64, numBins),
+		TotCount:     0,
 		MinDataPoint: math.MaxUint64,
 		MaxDataPoint: 0,
 	}
@@ -89,12 +90,16 @@ func (gh *Histogram) Add(dataPoint uint64, count uint64) {
 	idx := search(gh.Ranges, dataPoint)
 	if idx >= 0 {
 		gh.Counts[idx] += count
-	}
-	if gh.MinDataPoint > count {
-		gh.MinDataPoint = count
-	}
-	if gh.MaxDataPoint < count {
-		gh.MaxDataPoint = count
+
+		gh.TotCount += count
+
+		if gh.MinDataPoint > count {
+			gh.MinDataPoint = count
+		}
+
+		if gh.MaxDataPoint < count {
+			gh.MaxDataPoint = count
+		}
 	}
 
 	gh.m.Unlock()
@@ -126,9 +131,13 @@ func (gh *Histogram) AddAll(src *Histogram) {
 	for i := 0; i < len(src.Counts); i++ {
 		gh.Counts[i] += src.Counts[i]
 	}
+
+	gh.TotCount += src.TotCount
+
 	if gh.MinDataPoint > src.MinDataPoint {
 		gh.MinDataPoint = src.MinDataPoint
 	}
+
 	if gh.MaxDataPoint < src.MaxDataPoint {
 		gh.MaxDataPoint = src.MaxDataPoint
 	}
@@ -158,16 +167,14 @@ func (gh *Histogram) EmitGraph(prefix []byte,
 		out = bytes.NewBuffer(make([]byte, 0, 80*countsN))
 	}
 
-	var totCount uint64
 	var maxCount uint64
 	for _, c := range counts {
-		totCount += c
 		if maxCount < c {
 			maxCount = c
 		}
 	}
-	totCountF := float64(totCount)
 	maxCountF := float64(maxCount)
+	totCountF := float64(gh.TotCount)
 
 	widthRange := len(strconv.Itoa(int(ranges[rangesN-1])))
 	widthWidth := len(strconv.Itoa(int(ranges[rangesN-1] - ranges[rangesN-2])))
