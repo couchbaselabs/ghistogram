@@ -191,3 +191,40 @@ func TestGraph(t *testing.T) {
 			got, exp)
 	}
 }
+
+func BenchmarkAdd_100_10_0p0(b *testing.B) {
+	benchmarkAdd(b, 100, 10, 0.0)
+}
+
+func BenchmarkAdd_100_10_1p5(b *testing.B) {
+	benchmarkAdd(b, 100, 10, 1.5)
+}
+
+func BenchmarkAdd_100_10_2p0(b *testing.B) {
+	benchmarkAdd(b, 100, 10, 2.0)
+}
+
+func BenchmarkAdd_1000_10_0p0(b *testing.B) {
+	benchmarkAdd(b, 1000, 10, 0.0)
+}
+
+func BenchmarkAdd_1000_10_1p5(b *testing.B) {
+	benchmarkAdd(b, 1000, 10, 1.5)
+}
+
+func BenchmarkAdd_1000_10_2p0(b *testing.B) {
+	benchmarkAdd(b, 1000, 10, 2.0)
+}
+
+func benchmarkAdd(b *testing.B,
+	numBins int,
+	binFirst uint64,
+	binGrowthFactor float64) {
+	gh := NewHistogram(numBins, binFirst, binGrowthFactor)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		gh.Add(uint64(i), 1)
+	}
+}
