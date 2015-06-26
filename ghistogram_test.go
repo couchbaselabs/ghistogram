@@ -1,6 +1,7 @@
 package ghistogram
 
 import (
+	"bytes"
 	"testing"
 )
 
@@ -226,5 +227,29 @@ func benchmarkAdd(b *testing.B,
 
 	for i := 0; i < b.N; i++ {
 		gh.Add(uint64(i), 1)
+	}
+}
+
+func BenchmarkEmitGraph(b *testing.B) {
+	benchmarkEmitGraph(b, 100, 10, 2.0)
+}
+
+func benchmarkEmitGraph(b *testing.B,
+	numBins int,
+	binFirst uint64,
+	binGrowthFactor float64) {
+	gh := NewHistogram(numBins, binFirst, binGrowthFactor)
+	for i := 0; i < b.N/1000; i++ {
+		gh.Add(uint64(i), 1)
+	}
+
+	buf := bytes.NewBuffer(make([]byte, 0, 20000))
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		gh.EmitGraph(nil, buf)
+
+		buf.Reset()
 	}
 }
