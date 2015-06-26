@@ -132,6 +132,10 @@ func TestAdd(t *testing.T) {
 					testi, gh.Counts, test.exp)
 			}
 		}
+
+		if gh.TotCount != uint64(testi+1) {
+			t.Errorf("TotCounts wrong")
+		}
 	}
 }
 
@@ -154,6 +158,10 @@ func TestAddAll(t *testing.T) {
 			t.Errorf("AddAll mismatch, actual (%v) != exp (%v)",
 				gh2.Counts, exp)
 		}
+	}
+
+	if gh2.TotCount != 12 {
+		t.Errorf("TotCount wrong")
 	}
 }
 
