@@ -43,9 +43,12 @@ type Histogram struct {
 	// Counts holds the event counts for bins.
 	Counts []uint64
 
-	TotCount     uint64
-	MinDataPoint uint64
-	MaxDataPoint uint64
+	// TotCount is the sum of all counts.
+	TotCount uint64
+
+	TotDataPoint uint64 // TotDataPoint is the sum of all data points.
+	MinDataPoint uint64 // MinDataPoint is the smallest data point seen.
+	MaxDataPoint uint64 // MaxDataPoint is the largest data point seen.
 
 	m sync.Mutex
 }
@@ -90,15 +93,14 @@ func (gh *Histogram) Add(dataPoint uint64, count uint64) {
 	idx := search(gh.Ranges, dataPoint)
 	if idx >= 0 {
 		gh.Counts[idx] += count
-
 		gh.TotCount += count
 
-		if gh.MinDataPoint > count {
-			gh.MinDataPoint = count
+		gh.TotDataPoint += dataPoint
+		if gh.MinDataPoint > dataPoint {
+			gh.MinDataPoint = dataPoint
 		}
-
-		if gh.MaxDataPoint < count {
-			gh.MaxDataPoint = count
+		if gh.MaxDataPoint < dataPoint {
+			gh.MaxDataPoint = dataPoint
 		}
 	}
 
@@ -131,13 +133,12 @@ func (gh *Histogram) AddAll(src *Histogram) {
 	for i := 0; i < len(src.Counts); i++ {
 		gh.Counts[i] += src.Counts[i]
 	}
-
 	gh.TotCount += src.TotCount
 
+	gh.TotDataPoint += src.TotDataPoint
 	if gh.MinDataPoint > src.MinDataPoint {
 		gh.MinDataPoint = src.MinDataPoint
 	}
-
 	if gh.MaxDataPoint < src.MaxDataPoint {
 		gh.MaxDataPoint = src.MaxDataPoint
 	}
@@ -217,3 +218,10 @@ func (gh *Histogram) EmitGraph(prefix []byte,
 }
 
 var bar = []byte("******************************")
+
+// CallSync invokes the callback func while the histogram is locked.
+func (gh *Histogram) CallSync(f func()) {
+	gh.m.Lock()
+	f()
+	gh.m.Unlock()
+}
